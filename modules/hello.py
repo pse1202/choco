@@ -3,7 +3,8 @@ from modules import module, Result, ResultType
 
 @module.route(u'안녕')
 def hello(message):
-    return Result(type=ResultType.TEXT, content=u'안녕!')
+    resp = '안녕 {0}!'.format(message.user_nick)
+    return Result(type=ResultType.TEXT, content=resp)
 
 @module.route(u'(\d+)\+(\d+)', re=True)
 def sum_value(message, a, b):

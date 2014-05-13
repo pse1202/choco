@@ -136,8 +136,14 @@ class Choco(object):
             try: t = datetime.fromtimestamp(data['chatLog']['sendAt'])
             except Exception, e:
                 t = None
+
+            nick = data['authorNickname']
+            try: nick = nick.encode('utf-8') if isinstance(nick, unicode) else nick
+            except UnicodeDecodeError, e:
+                pass
+
             message = Message(room=data['chatId'], user_id=data['chatLog']['authorId'],
-                user_nick=data['authorNickname'], text=data['chatLog']['message'],
+                user_nick=nick, text=data['chatLog']['message'],
                 attachment=attachment, time=t)
 
             self.dispatch(data['chatId'], message)
