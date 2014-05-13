@@ -19,6 +19,7 @@ from collections import namedtuple
 from datetime import datetime
 
 from lib.endpoint import Endpoint
+from lib.image import get_image_size
 from lib.run_async import run_async
 from modules import ResultType
 
@@ -154,3 +155,11 @@ class Choco(object):
         if result:
             if result.type is ResultType.TEXT:
                 self.kakao.write(room, result.content, False)
+            elif result.type is ResultType.IMAGE:
+                content = result.content
+                size = get_image_size(content)
+                url = self.kakao.upload_image(content)
+                if url:
+                    self.kakao.write_image(room, url, size[0], size[1], False)
+                else:
+                    print >> sys.stderr, 'WARNING: Failed to upload photo'

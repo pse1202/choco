@@ -1,4 +1,5 @@
 #-*- coding: utf-8 -*-
+import os
 from modules import module, Result, ResultType
 
 @module.route(u'안녕')
@@ -15,3 +16,7 @@ def sum_value(message, a, b):
 def hello_photo(message):
     if message.attachment:
         return Result(type=ResultType.TEXT, content=u'사진 받았다!')
+    else:
+        image = os.path.join('sample', 'image.png')
+        print image
+        return Result(type=ResultType.IMAGE, content=image)
