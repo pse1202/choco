@@ -9,22 +9,25 @@ The bot can handle multiple rooms at a time.
 1. Create new python file to `modules` directory.
 2. Add `from modules import module, Result` to top.
 3. (optional) Add `#-*- coding: utf-8 -*-` to use other languages such as Korean, Japanese.
-4. Write your bot script like:
+4. Write your bot script like (full code):
 
 ```python
+#-*- coding: utf-8 -*-
+from modules import module, Result, ResultType
+
 @module.route('Hello')
 def hello(message):
-    return Result(text=u'Hi!', image=None)
+    return Result(type=ResultType.TEXT, content='Hello!')
 
-@module.route(u'(\d+)(\s+)?\+(\s+)?(\d+)')
+@module.route(u'(\d+)\+(\d+)', re=True)
 def sum_value(message, a, b):
     resp = '{0} + {1} = {2}'.format(a, b, int(a) + int(b))
-    return Result(text=resp, image=None)
-    
-@module.route(u'Photo')
+    return Result(type=ResultType.TEXT, content=resp)
+
+@module.route('Photo')
 def hello_photo(message):
     if message.attachment:
-        return Result(text='Received photo!', image=None)
+        return Result(type=ResultType.TEXT, content=u'I recv a photo!')
 ```
 
 ## Installation
