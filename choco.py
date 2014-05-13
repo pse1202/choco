@@ -35,6 +35,7 @@ class Choco(object):
         self.queue = Queue(10000)
         self.count = 0
         self.pool = [Process(target=self.process) for i in range(config.WORKER_COUNT)]
+        self.ping_process = Process(target=self.auto_ping)
         self.exit = False
         self.kakao = None
 
@@ -110,6 +111,7 @@ class Choco(object):
         bot = Choco(config)
         for p in bot.pool:
             p.start()
+        bot.ping_thread = bot.auto_ping()
         bot.watch()
 
     def watch(self):
@@ -131,9 +133,21 @@ class Choco(object):
                             self.queue.put(data)
             except socket.timeout, e:
                 print >> sys.stderr, 'ERROR: socket timeout'
+            except KeyboardInterrupt, e:
+                self.exit = True
             except Exception, e:
                 print >> sys.stderr, e
                 self.exit = True
+
+    def auto_ping(self):
+        while not self.exit:
+            try:
+                self.kakao.ping(False)
+            except KeyboardInterrupt, e:
+                self.exit = True
+            except Exception, e:
+                pass
+            time.sleep(60)
 
     def process(self):
         while not self.exit:
