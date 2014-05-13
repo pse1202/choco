@@ -5,7 +5,7 @@ The bot can handle multiple rooms at a time.
 
 - Wait! If you gonna use 'Your' Kakaotalk ID(not an extra ID), using this library to run a bot or else is not recommend. (because of critical problem with PC Kakaotalk's login, and I don't know why it happens exactly)
 
-## Adding comands
+## Adding commands
 1. Create new python file to `modules` directory.
 2. Add `from modules import module, Result` to top.
 3. (optional) Add `#-*- coding: utf-8 -*-` to use other languages such as Korean, Japanese.
@@ -13,13 +13,13 @@ The bot can handle multiple rooms at a time.
 
 ```python
 #-*- coding: utf-8 -*-
-from modules import module, Result, ResultType
+from modules import module, dispatch, Result, ResultType
 
 @module.route('Hello')
 def hello(message):
     return Result(type=ResultType.TEXT, content='Hello!')
 
-@module.route(u'(\d+)\+(\d+)', re=True)
+@module.route('(\d+)\+(\d+)', re=True)
 def sum_value(message, a, b):
     resp = '{0} + {1} = {2}'.format(a, b, int(a) + int(b))
     return Result(type=ResultType.TEXT, content=resp)
@@ -28,6 +28,17 @@ def sum_value(message, a, b):
 def hello_photo(message):
     if message.attachment:
         return Result(type=ResultType.TEXT, content=u'I recv a photo!')
+    else:
+        image = os.path.join('sample', 'image.png')
+        return Result(type=ResultType.IMAGE, content=image)
+
+@module.route('Bye')
+def leave(message):
+    text_result = Result(type=ResultType.TEXT, content=u'Leave after 3 seconds!')
+    dispatch(message.room, text_result)
+    time.sleep(3)
+
+    return Result(type=ResultType.LEAVE, content=None)
 ```
 
 ## Installation
