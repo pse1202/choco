@@ -15,66 +15,65 @@ from textwrap import dedent as trim
 from choco import Choco
 
 def create_default_config(fn):
-  f = open(fn, 'w')
-  print >> f, trim("""\
-    '''
-    You have set "choco_auth" to redis db
-    redis> hset choco_auth mail [kakaotalk email]
-    redis> hset choco_auth password [kakaotalk password]
-    redis> hset choco_auth client [client name]
-    redis> hset choco_auth uuid [any text]
-    '''
+    f = open(fn, 'w')
+    print >> f, trim("""\
+      '''
+      You have set "choco_auth" to redis db
+      redis> hset choco_auth mail [kakaotalk email]
+      redis> hset choco_auth password [kakaotalk password]
+      redis> hset choco_auth client [client name]
+      redis> hset choco_auth uuid [any text]
+      '''
+      # for better performance: process count
+      WORKER_COUNT = 2
 
-    # for better performance: process count
-    WORKER_COUNT = 2
+      REDIS_HOST = 'localhost'
+      REDIS_PORT = 6379
+      REDIS_DB = 0
+      REDIS_PASSWORD = None
 
-    REDIS_HOST = 'localhost'
-    REDIS_PORT = 6379
-    REDIS_DB = 0
-    REDIS_PASSWORD = None
+      DEBUG = True
+      SAVE_ROOM = False
 
-    DEBUG = True
-    SAVE_ROOM = False
-
-    EXCLUDED_MODULES = ()
-    """)
-  f.close()
+      EXCLUDED_MODULES = ()
+      """)
+    f.close()
 
 def main(argv=None):
-  config_file = os.path.join('.', 'config.py')
-  if not os.path.isfile(config_file):
-    create_default_config(config_file)
-    print >> sys.stdout, "Created config file. Edit config.py and run choco again"
-    sys.exit(0)
+    config_file = os.path.join('.', 'config.py')
+    if not os.path.isfile(config_file):
+        create_default_config(config_file)
+        print >> sys.stdout, "Created config file. Edit config.py and run choco again"
+        sys.exit(0)
 
-  try:
-    import config
-  except Exception, e:
-    print >> sys.stderr, "Error: Couldn't import a config file!"
-    sys.exit(1)
+    try:
+        import config
+    except Exception, e:
+        print >> sys.stderr, "Error: Couldn't import a config file!"
+        sys.exit(1)
 
-  parser = optparse.OptionParser('%prog [options]')
-  parser.add_option('-d', '--debug', action='store_true', default=False,
-      help='debug mode (verbose)')
-  parser.add_option('-w', '--workers', help='set worker(thread) count')
-  parser.add_option('-m', '--modules', action='store_true', default=False,
-      help='show module list')
-  opts, args = parser.parse_args(argv)
-  if args: print >> sys.stderr, 'Warning: ignoring spurious arguments'
+    parser = optparse.OptionParser('%prog [options]')
+    parser.add_option('-d', '--debug', action='store_true', default=False,
+        help='debug mode (verbose)')
+    parser.add_option('-w', '--workers', help='set worker(thread) count')
+    parser.add_option('-m', '--modules', action='store_true', default=False,
+        help='show module list')
+    opts, args = parser.parse_args(argv)
+    if args: print >> sys.stderr, 'Warning: ignoring spurious arguments'
 
-  if opts.debug: config.DEBUG = True
-  if opts.workers: config.WORKER_COUNT = int(opts.workers)
-  if opts.modules:
-    from lib.endpoint import Endpoint
-    from modules import set_endpoint, module_loader
-    ep = Endpoint()
-    home = os.getcwd()
-    set_endpoint(ep)
-    module_loader(home, config)
-    print ep.routes
-    sys.exit(0)
+    if opts.debug: config.DEBUG = True
+    if opts.workers: config.WORKER_COUNT = int(opts.workers)
+    if opts.modules:
+        from lib.endpoint import Endpoint
+        from modules import set_endpoint, module_loader
+        ep = Endpoint()
+        home = os.getcwd()
+        set_endpoint(ep)
+        module_loader(home, config)
+        print ep.routes
+        sys.exit(0)
 
-  Choco.run(config)
+    Choco.run(config)
 
 if __name__ == '__main__':
-   main()
+    main()
