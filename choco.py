@@ -83,7 +83,6 @@ class Choco(object):
 
         if not user_session or not user_id:
             self.kakao = kakaotalk(debug=self.config.DEBUG)
-            print (mail, password, client, uuid)
             auth_result = self.kakao.auth(mail, password, client, uuid)
             if not auth_result:
                 print >> sys.stderr, "KakaoTalk auth failed"
@@ -111,7 +110,6 @@ class Choco(object):
         bot = Choco(config)
         for p in bot.pool:
             p.start()
-        bot.ping_thread = bot.auto_ping()
         bot.watch()
 
     def watch(self):
@@ -143,8 +141,6 @@ class Choco(object):
         while not self.exit:
             try:
                 self.kakao.ping(False)
-            except KeyboardInterrupt, e:
-                self.exit = True
             except Exception, e:
                 pass
             time.sleep(60)
