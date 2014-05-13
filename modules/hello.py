@@ -18,5 +18,4 @@ def hello_photo(message):
         return Result(type=ResultType.TEXT, content=u'사진 받았다!')
     else:
         image = os.path.join('sample', 'image.png')
-        print image
         return Result(type=ResultType.IMAGE, content=image)
