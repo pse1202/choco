@@ -5,7 +5,7 @@ from modules import module, Result
 def hello(message):
     return Result(text=u'안녕!', image=None)
 
-@module.route(u'(\d+)(\s+)?\+(\s+)?(\d+)')
+@module.route(u'(\d+)\+(\d+)', re=True)
 def sum_value(message, a, b):
     resp = '{0} + {1} = {2}'.format(a, b, int(a) + int(b))
     return Result(text=resp, image=None)
