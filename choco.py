@@ -11,8 +11,12 @@ import time
 import os
 import sys
 import base64
+import json
 import redis
+import socket
 from multiprocessing import Process, Queue
+from collections import namedtuple
+from datetime import datetime
 
 from lib.endpoint import Endpoint
 from lib.run_async import run_async
@@ -22,10 +26,12 @@ sys.path.append(os.path.join(home, 'modules'))
 sys.path.append(os.path.join(home, 'pykakao'))
 from pykakao import kakaotalk
 
+Message = namedtuple('Message', ['room', 'user_id', 'user_nick', 'text', 'attachment', 'time'])
 class Choco(object):
     def __init__(self, config):
         self.config = config
         self.queue = Queue(10000)
+        self.count = 0
         self.pool = [Process(target=self.process) for i in range(config.WORKER_COUNT)]
         self.exit = False
         self.kakao = None
@@ -76,27 +82,26 @@ class Choco(object):
             self.kakao = kakaotalk(debug=self.config.DEBUG)
             print (mail, password, client, uuid)
             auth_result = self.kakao.auth(mail, password, client, uuid)
-            if auth_result is False:
+            if not auth_result:
                 print >> sys.stderr, "KakaoTalk auth failed"
                 sys.exit(1)
             else:
-                login_result = self.kakao.login(timeout=15)
-                if login_result is False:
+                login_result = self.kakao.login()
+                if not login_result:
                     print >> sys.stderr, "KakaoTalk login failed"
                     sys.exit(1)
                 else:
                     self.cache.hset('choco_session', 'key', self.kakao.session_key)
                     self.cache.hset('choco_session', 'id', self.kakao.user_id)
         else:
-            self.kakao = kakaotalk(user_session, client, user_id,
+            self.kakao = kakaotalk(user_session, uuid, user_id,
                 debug=self.config.DEBUG)
-            login_result = self.kakao.login(timeout=15)
-            if login_result is False:
+            login_result = self.kakao.login()
+            if not login_result:
                 print >> sys.stderr, "KakaoTalk login failed"
                 sys.exit(1)
 
         return True
-
 
     @staticmethod
     def run(config):
@@ -106,12 +111,36 @@ class Choco(object):
         bot.watch()
 
     def watch(self):
-        while True:
-            pass
+        while not self.exit:
+            try:
+                data = self.kakao.translate_response()
+                if not data:
+                    print >> sys.stderr, 'WARNING: data is None'
+                elif data['command'] == 'MSG':
+                    self.queue.put(data)
+                    self.cache.incr('choco:msg_count')
+            except socket.timeout, e:
+                print >> sys.stderr, 'ERROR: socket timeout'
+            except Exception, e:
+                print >> sys.stderr, e
+                self.exit = True
 
     def process(self):
-        pass
+        while not self.exit:
+            item = self.queue.get()
+            data = item['body']
+            attachment = None
+            if 'attachment' in data['chatLog']:
+                attachment = json.loads(data['chatLog']['attachment'])
+            try: t = datetime.fromtimestamp(data['chatLog']['sendAt'])
+            except Exception, e:
+                t = None
+            message = Message(room=data['chatId'], user_id=data['chatLog']['authorId'],
+                user_nick=data['authorNickname'], text=data['chatLog']['message'],
+                attachment=attachment, time=t)
+
+            self.dispatch(message)
 
     @run_async
-    def dispatch(self):
+    def dispatch(self, message):
         pass
