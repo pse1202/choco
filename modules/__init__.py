@@ -3,8 +3,14 @@ import sys
 import imp
 from collections import namedtuple
 
-Result = namedtuple('Result', ['text', 'image'])
+Result = namedtuple('Result', ['type', 'content'])
 module = None
+
+class ResultType:
+    TEXT = 0
+    IMAGE = 1
+    LEAVE = 2
+
 def set_endpoint(ep):
     global module
     module = ep

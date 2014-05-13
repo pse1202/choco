@@ -20,6 +20,7 @@ from datetime import datetime
 
 from lib.endpoint import Endpoint
 from lib.run_async import run_async
+from modules import ResultType
 
 home = os.getcwd()
 sys.path.append(os.path.join(home, 'modules'))
@@ -145,7 +146,5 @@ class Choco(object):
     def dispatch(self, room, message):
         result = self.module(message.text, message)
         if result:
-            if result.image:
-                pass
-            else:
-                self.kakao.write(room, result.text, False)
+            if result.type is ResultType.TEXT:
+                self.kakao.write(room, result.content, False)
