@@ -10,6 +10,7 @@ Do you like chocopy? :)
 import time
 import os
 import sys
+import base64
 import redis
 from multiprocessing import Process, Queue
 
@@ -27,6 +28,7 @@ class Choco(object):
         self.queue = Queue(10000)
         self.pool = [Process(target=self.process) for i in range(config.WORKER_COUNT)]
         self.exit = False
+        self.kakao = None
 
         redis_pool = redis.ConnectionPool(host=config.REDIS_HOST,
             port=config.REDIS_PORT,
@@ -38,7 +40,7 @@ class Choco(object):
         auth_mail = self.cache.hget('choco_auth', 'mail')
         auth_pass = self.cache.hget('choco_auth', 'password')
         auth_client = self.cache.hget('choco_auth', 'client')
-        auth_uuid = self.cache.hget('choco_auth', 'uuid')
+        auth_uuid = base64.b64encode(self.cache.hget('choco_auth', 'uuid'))
 
         if not auth_mail:
             print >> sys.stderr, "Authenticate failed: email address not found\n" + \
@@ -58,11 +60,43 @@ class Choco(object):
             sys.exit(1)
 
         self.load_module()
+        if self.auth_kakao(auth_mail, auth_pass, auth_client, auth_uuid):
+            print >> sys.stdout, 'Successfully connected to KakaoTalk server'
 
     def load_module(self):
         from modules import set_endpoint, module_loader
         set_endpoint(self.module)
         module_loader(home, self.config)
+
+    def auth_kakao(self, mail, password, client, uuid):
+        user_session = self.cache.hget('choco_session', 'key')
+        user_id = self.cache.hget('choco_session', 'id')
+
+        if not user_session or not user_id:
+            self.kakao = kakaotalk(debug=self.config.DEBUG)
+            print (mail, password, client, uuid)
+            auth_result = self.kakao.auth(mail, password, client, uuid)
+            if auth_result is False:
+                print >> sys.stderr, "KakaoTalk auth failed"
+                sys.exit(1)
+            else:
+                login_result = self.kakao.login(timeout=15)
+                if login_result is False:
+                    print >> sys.stderr, "KakaoTalk login failed"
+                    sys.exit(1)
+                else:
+                    self.cache.hset('choco_session', 'key', self.kakao.session_key)
+                    self.cache.hset('choco_session', 'id', self.kakao.user_id)
+        else:
+            self.kakao = kakaotalk(user_session, client, user_id,
+                debug=self.config.DEBUG)
+            login_result = self.kakao.login(timeout=15)
+            if login_result is False:
+                print >> sys.stderr, "KakaoTalk login failed"
+                sys.exit(1)
+
+        return True
+
 
     @staticmethod
     def run(config):
