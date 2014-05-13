@@ -21,7 +21,7 @@ from datetime import datetime
 from lib.endpoint import Endpoint
 from lib.image import get_image_size
 from lib.run_async import run_async
-from modules import ResultType
+from modules import Cache, Result, ResultType
 
 home = os.getcwd()
 sys.path.append(os.path.join(home, 'modules'))
@@ -121,6 +121,14 @@ class Choco(object):
                 elif data['command'] == 'MSG':
                     self.queue.put(data)
                     self.cache.incr('choco:msg_count')
+                elif data['command'] == 'DECUNREAD':
+                    body = data['body']
+                    if 'chatId' in body:
+                        chatId = str(body['chatId'])
+                        exists = self.cache.sismember('choco:rooms', chatId)
+                        if not exists:
+                            data['command'] = 'NEW'
+                            self.queue.put(data)
             except socket.timeout, e:
                 print >> sys.stderr, 'ERROR: socket timeout'
             except Exception, e:
@@ -130,24 +138,35 @@ class Choco(object):
     def process(self):
         while not self.exit:
             item = self.queue.get()
-            data = item['body']
-            attachment = None
-            if 'attachment' in data['chatLog']:
-                attachment = json.loads(data['chatLog']['attachment'])
-            try: t = datetime.fromtimestamp(data['chatLog']['sendAt'])
-            except Exception, e:
-                t = None
+            cmd = item['command']
 
-            nick = data['authorNickname']
-            try: nick = nick.encode('utf-8') if isinstance(nick, unicode) else nick
-            except UnicodeDecodeError, e:
-                pass
+            if cmd == 'MSG':
+                data = item['body']
+                attachment = None
+                if 'attachment' in data['chatLog']:
+                    attachment = json.loads(data['chatLog']['attachment'])
+                try: t = datetime.fromtimestamp(data['chatLog']['sendAt'])
+                except Exception, e:
+                    t = None
 
-            message = Message(room=data['chatId'], user_id=data['chatLog']['authorId'],
-                user_nick=nick, text=data['chatLog']['message'],
-                attachment=attachment, time=t)
+                nick = data['authorNickname']
+                user_id = str(data['chatLog']['authorId'])
+                try: nick = nick.encode('utf-8') if isinstance(nick, unicode) else nick
+                except UnicodeDecodeError, e:
+                    pass
 
-            self.dispatch(data['chatId'], message)
+                message = Message(room=data['chatId'], user_id=user_id,
+                    user_nick=nick, text=data['chatLog']['message'],
+                    attachment=attachment, time=t)
+
+                self.dispatch(data['chatId'], message)
+            elif cmd == 'NEW':
+                data = item['body']
+                Cache.enter(data['chatId'], data)
+
+                content = u"[초코봇]\r\n방에 초대당(?)하고 가장 먼저 말을 하신 분이 저를 내보낼(?) 수 있습니다."
+                message = Result(type=ResultType.TEXT, content=content)
+                self.dispatch(data['chatId'], message, True)
 
     @run_async
     def dispatch(self, room, message, child=False):
@@ -164,4 +183,5 @@ class Choco(object):
                 else:
                     print >> sys.stderr, 'WARNING: Failed to upload photo'
             elif result.type is ResultType.LEAVE:
+                Cache.leave(room)
                 self.kakao.leave(room, False)

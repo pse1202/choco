@@ -30,3 +30,27 @@ def module_loader(home, config):
             except Exception, e:
                 print >> sys.stderr, "Error loading %s: %s" % (name, e)
                 sys.exit(1)
+
+class Cache(object):
+    @staticmethod
+    def get(room, name):
+        key = 'choco:room:' + str(room)
+        return choco.cache.hget(key, name)
+
+    @staticmethod
+    def enter(room, data):
+        r = str(room)
+        key = 'choco:room:' + r
+        p = choco.cache.pipeline()
+        p.sadd('choco:rooms', r)
+        p.hset(key, 'admin', str(data['userId']))
+        p.execute()
+
+    @staticmethod
+    def leave(room):
+        r = str(room)
+        key = 'choco:room:' + r
+        p = choco.cache.pipeline()
+        p.srem('choco:rooms', r)
+        p.delete(key)
+        p.execute()
