@@ -54,7 +54,7 @@ pip install -r requirements.pip
 ```
 
 ### Support
-The developer reside in [Ozinger IRC](http://ozinger.com), [Freenode IRC](http://freenode.net) and would be glad to help you.
+The developer reside in [Ozinger IRC](http://ozinger.com), [Freenode IRC](http://freenode.net) and would be glad to help you. (IRC nickname is `ssut`)
 
 If you think you have a found a bug/have a idea/suggestion, please **open a issue** here on Github.
 
