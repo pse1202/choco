@@ -1,4 +1,9 @@
 #-*- coding: utf-8 -*-
+"""
+Python endpoint implementation with regular expression
+
+https://gist.github.com/ssut/6ecf93fac9457dd623b0
+"""
 import inspect
 import re
 
