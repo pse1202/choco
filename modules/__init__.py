@@ -4,6 +4,7 @@ import imp
 from collections import namedtuple
 
 Result = namedtuple('Result', ['type', 'content'])
+choco = None
 module = None
 
 class ResultType:
@@ -11,9 +12,13 @@ class ResultType:
     IMAGE = 1
     LEAVE = 2
 
-def set_endpoint(ep):
-    global module
+def init_module(cc, ep):
+    global choco, module
+    choco = cc
     module = ep
+
+def dispatch(room, message):
+    choco.dispatch(room, message, True)
 
 def module_loader(home, config):
     for fn in os.listdir(os.path.join(home, 'modules')):

@@ -72,8 +72,8 @@ class Choco(object):
             print >> sys.stdout, 'Successfully connected to KakaoTalk server'
 
     def load_module(self):
-        from modules import set_endpoint, module_loader
-        set_endpoint(self.module)
+        from modules import init_module, module_loader
+        init_module(self, self.module)
         module_loader(home, self.config)
 
     def auth_kakao(self, mail, password, client, uuid):
@@ -150,8 +150,8 @@ class Choco(object):
             self.dispatch(data['chatId'], message)
 
     @run_async
-    def dispatch(self, room, message):
-        result = self.module(message.text, message)
+    def dispatch(self, room, message, child=False):
+        result = self.module(message.text, message) if not child else message
         if result:
             if result.type is ResultType.TEXT:
                 self.kakao.write(room, result.content, False)
@@ -163,3 +163,5 @@ class Choco(object):
                     self.kakao.write_image(room, url, size[0], size[1], False)
                 else:
                     print >> sys.stderr, 'WARNING: Failed to upload photo'
+            elif result.type is ResultType.LEAVE:
+                self.kakao.leave(room, False)
