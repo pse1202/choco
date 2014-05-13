@@ -1,7 +1,9 @@
 import os
 import sys
 import imp
+from collections import namedtuple
 
+Result = namedtuple('Result', ['text', 'image'])
 module = None
 def set_endpoint(ep):
     global module

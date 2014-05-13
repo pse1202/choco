@@ -64,7 +64,7 @@ class Endpoint(object):
             rule = (rule, endpoint)
             self.rules.append(rule)
 
-    def dispatch(self, rule, *args):
+    def dispatch(self, rule, message):
         matches = (
             (regex.match(rule), ep) for regex, ep in self.rules
         )
@@ -75,5 +75,5 @@ class Endpoint(object):
         )
 
         for args, endpoint in matches:
-            return self.functions[endpoint](*args)
+            return self.functions[endpoint](message, *args)
         return None

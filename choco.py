@@ -139,8 +139,13 @@ class Choco(object):
                 user_nick=data['authorNickname'], text=data['chatLog']['message'],
                 attachment=attachment, time=t)
 
-            self.dispatch(message)
+            self.dispatch(data['chatId'], message)
 
     @run_async
-    def dispatch(self, message):
-        pass
+    def dispatch(self, room, message):
+        result = self.module(message.text, message)
+        if result:
+            if result.image:
+                pass
+            else:
+                self.kakao.write(room, result.text, False)
