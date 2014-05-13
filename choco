@@ -57,11 +57,22 @@ def main(argv=None):
   parser.add_option('-d', '--debug', action='store_true', default=False,
       help='debug mode (verbose)')
   parser.add_option('-w', '--workers', help='set worker(thread) count')
+  parser.add_option('-m', '--modules', action='store_true', default=False,
+      help='show module list')
   opts, args = parser.parse_args(argv)
   if args: print >> sys.stderr, 'Warning: ignoring spurious arguments'
 
   if opts.debug: config.DEBUG = True
   if opts.workers: config.WORKER_COUNT = int(opts.workers)
+  if opts.modules:
+    from lib.endpoint import Endpoint
+    from modules import set_endpoint, module_loader
+    ep = Endpoint()
+    home = os.getcwd()
+    set_endpoint(ep)
+    module_loader(home, config)
+    print ep.routes
+    sys.exit(0)
 
   Choco.run(config)
 
