@@ -5,6 +5,24 @@ The bot can handle multiple rooms at a time.
 
 - Wait! If you gonna use 'Your' Kakaotalk ID(not an extra ID), using this library to run a bot or else is not recommend. (because of critical problem with PC Kakaotalk's login, and I don't know why it happens exactly)
 
+## Installation
+1. Clone this repository
+2. Move to choco directory and execute this command: `./choco` (If occurs permission error execute `chmod +x choco`)
+3. Edit config file(config.py)
+4. Open redis and run the following command:
+```
+redis> hset choco_auth mail [kakaotalk email]
+redis> hset choco_auth password [kakaotalk password]
+redis> hset choco_auth client [client name]
+redis> hset choco_auth uuid [any text]
+```
+5. Run choco and authorize KakaoTalk account
+6. Your account session data will be save to Redis DB (HASH: choco_session, If you want to re-authorize kakao account, remove this hash key use `HDEL` command
+
+### Run
+* On **linux/unix**: `./choco`
+* On **windows**: Before you run the bot, rename `choco` to `run.py` and just double-click `run.py` to start the bot, as long as you have Python installed correctly. **[Use Choco on Windows Guide (Korean)](http://ssut-dev.tumblr.com/post/85705056741/windows-choco-kakaotalk-bot)**
+
 ## Adding commands
 Create new python file to `modules` directory and write your bot script like this code (full code):
 
@@ -57,23 +75,22 @@ def leave(message, session):
 |nick|str|User's nickname that sent the message|
 |is\_admin|bool|is admin|
 
-## Installation
-1. Clone this repository
-2. Move to choco directory and execute this command: `./choco` (If occurs permission error execute `chmod +x choco`)
-3. Edit config file(config.py)
-4. Open redis and run the following command:
+### API
+#### Unicode to String
+```python
+from lib.unicode import u
+a = u'가나다'
+if isinstance(a, unicode):
+	b = u(a)
+    print type(b) # str
 ```
-redis> hset choco_auth mail [kakaotalk email]
-redis> hset choco_auth password [kakaotalk password]
-redis> hset choco_auth client [client name]
-redis> hset choco_auth uuid [any text]
-```
-5. Run choco and authorize KakaoTalk account
-6. Your account session data will be save to Redis DB (HASH: choco_session, If you want to re-authorize kakao account, remove this hash key use `HDEL` command
 
-### Run
-* On **linux/unix**: `./choco`
-* On **windows**: Before you run the bot, rename `choco` to `run.py` and just double-click `run.py` to start the bot, as long as you have Python installed correctly. **[Use Choco on Windows Guide (Korean)](http://ssut-dev.tumblr.com/post/85705056741/windows-choco-kakaotalk-bot)**
+#### Get image size
+```python
+from lib.image import get_image_size
+file = '/Users/ssut/dev/choco/sample/image.png'
+get_image_size(file) # ( width, height )
+```
 
 ## Getting help with Choco
 ### Install dependencies
