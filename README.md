@@ -73,7 +73,7 @@ redis> hset choco_auth uuid [any text]
 
 ### Run
 * On **linux/unix**: `./choco`
-* On **windows**: Before you run the bot, rename `choco` to `run.py` and just double-click `run.py` to start the bot, as long as you have Python installed correctly. 
+* On **windows**: Before you run the bot, rename `choco` to `run.py` and just double-click `run.py` to start the bot, as long as you have Python installed correctly. **[Use Choco on Windows Guide (Korean)](http://ssut-dev.tumblr.com/post/85705056741/windows-choco-kakaotalk-bot)**
 
 ## Getting help with Choco
 ### Install dependencies
