@@ -78,7 +78,7 @@ class Endpoint(object):
                         rule = '^' + self.prefix + rule
                     else:
                         rule = self.prefix + rule
-            rule = re.compile(rule)
+                rule = re.compile(rule)
             rule = (rule, endpoint)
             self.rules.append(rule)
 
