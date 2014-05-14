@@ -36,6 +36,10 @@ def create_default_config(fn):
       DEBUG = True
       SAVE_ROOM = False
 
+      # stdout, stderr save destination. (when DEBUG is False)
+      STDOUT = 'stdout.log'
+      STDERR = 'stderr.log'
+
       COMMAND_PREFIX = '!' # ex: ',', '.' ..
       EXCLUDED_MODULES = ()
       """)
@@ -74,6 +78,10 @@ def main(argv=None):
         module_loader(home, config)
         print ep.routes
         sys.exit(0)
+
+    if not config.DEBUG:
+      sys.stdout = open(config.STDOUT, 'ab')
+      sys.stderr = open(config.STDERR, 'ab')
 
     Choco.run(config)
 
