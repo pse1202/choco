@@ -105,6 +105,9 @@ class Choco(object):
 
         return True
 
+    def reauth_kakao(self):
+        return self.kakao.login()
+
     @staticmethod
     def run(config):
         bot = Choco(config)
@@ -117,7 +120,12 @@ class Choco(object):
             try:
                 data = self.kakao.translate_response()
                 if not data:
-                    print >> sys.stderr, 'WARNING: data is None'
+                    print >> sys.stderr, 'WARNING: data is None. probably socket is disconnected?'
+                    if self.reauth():
+                        self.exit = False
+                    else:
+                        self.exit = True
+                        print >> sys.stderr, 'ERROR: failed to re-authorize to KakaoTalk'
                 elif data['command'] == 'MSG':
                     self.queue.put(data)
                     self.cache.incr('choco:msg_count')
@@ -174,7 +182,7 @@ class Choco(object):
                 data = item['body']
                 Cache.enter(data['chatId'], data)
 
-                content = u"[초코봇]\r\n방에 초대당(?)하고 가장 먼저 말을 하신 분이 저를 내보낼(?) 수 있습니다."
+                content = u"[초코봇]\r\n방에 초대하신 분만 /나가/를 사용하실 수 있습니다."
                 message = Result(type=ResultType.TEXT, content=content)
                 self.dispatch(data['chatId'], message, True)
 
