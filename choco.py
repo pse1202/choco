@@ -113,6 +113,7 @@ class Choco(object):
     @staticmethod
     def run(config):
         bot = Choco(config)
+        bot.ping_process.start()
         for p in bot.pool:
             p.start()
         bot.watch()
@@ -131,7 +132,7 @@ class Choco(object):
                         print >> sys.stderr, 'ERROR: failed to re-authorize to KakaoTalk'
                 elif data['command'] == 'MSG':
                     self.queue.put(data)
-                    self.cache.incr('choco:msg_count')
+                    self.cache.incr('choco:count:recv')
                 elif data['command'] == 'DECUNREAD':
                     body = data['body']
                     if 'chatId' in body:
@@ -150,15 +151,35 @@ class Choco(object):
 
     def auto_ping(self):
         while not self.exit:
+            ping_success = False
             try:
                 self.kakao.ping(False)
+                ping_success = True
             except Exception, e:
                 pass
+            self.print_log(ping_success)
             time.sleep(60)
+
+    def print_log(self, ping_success):
+        now = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
+        recv_count = self.cache.get('choco:count:recv')
+        exec_count = self.cache.get('choco:count:exec')
+        sent_count = self.cache.get('choco:count:sent')
+        room_count = self.cache.scard('choco:rooms')
+        session_count = self.cache.hlen('choco:sessions')
+        ping = '*' if ping_success is True else '-'
+        print >> sys.stdout, '[{0}] {1}'.format(ping, now)
+        print >> sys.stdout, 'RECV     : %s' % recv_count
+        print >> sys.stdout, 'EXEC     : %s' % exec_count
+        print >> sys.stdout, 'SENT     : %s' % sent_count
+        print >> sys.stdout, 'ROOMS    : %s' % room_count
+        print >> sys.stdout, 'SESSIONS : %s' % session_count
+        pass
 
     def process(self):
         while not self.exit:
             item = self.queue.get()
+            self.cache.incr('choco:count:exec')
             cmd = item['command']
 
             if cmd == 'MSG':
@@ -210,3 +231,4 @@ class Choco(object):
             elif result.type is ResultType.LEAVE:
                 Cache.leave(room)
                 self.kakao.leave(room, False)
+            self.cache.incr('choco:count:sent')
