@@ -105,7 +105,8 @@ class Session(object):
             return session
 
     def validate(self, message):
-        if self.nick == '' and len(message.user_nick) > 0:
+        if (self.nick == '' or self.nick != message.user_nick) \
+        and len(message.user_nick) > 0:
             self.nick = message.user_nick
             print 'updated nick: ' + self.nick
             self.save()
