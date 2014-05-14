@@ -69,7 +69,7 @@ class Endpoint(object):
             rule = (rule, endpoint)
             self.rules.append(rule)
 
-    def dispatch(self, rule, message):
+    def dispatch(self, rule, message, session):
         matches = (
             (regex.match(rule), ep) for regex, ep in self.rules
         )
@@ -80,5 +80,6 @@ class Endpoint(object):
         )
 
         for args, endpoint in matches:
-            return self.functions[endpoint](message, *args)
+            session.validate(message)
+            return self.functions[endpoint](message, session, *args)
         return None

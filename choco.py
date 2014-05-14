@@ -21,7 +21,7 @@ from datetime import datetime
 from lib.endpoint import Endpoint
 from lib.image import get_image_size
 from lib.run_async import run_async
-from modules import Cache, Result, ResultType
+from modules import Cache, Session, Result, ResultType
 
 home = os.getcwd()
 sys.path.append(os.path.join(home, 'modules'))
@@ -180,15 +180,19 @@ class Choco(object):
                 self.dispatch(data['chatId'], message)
             elif cmd == 'NEW':
                 data = item['body']
-                Cache.enter(data['chatId'], data)
+                room = data['chatId']
+                Cache.enter(room, data)
 
                 content = u"[초코봇]\r\n방에 초대하신 분만 /나가/를 사용하실 수 있습니다."
                 message = Result(type=ResultType.TEXT, content=content)
-                self.dispatch(data['chatId'], message, True)
+                self.dispatch(room, message, True)
 
     @run_async
     def dispatch(self, room, message, child=False):
-        result = self.module(message.text, message) if not child else message
+        if not child:
+            session = Session.get_or_create(room, message.user_id)
+            result = self.module(message.text, message, session)
+        else: result = message
         if result:
             if result.type is ResultType.TEXT:
                 self.kakao.write(room, result.content, False)
