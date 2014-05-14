@@ -107,6 +107,7 @@ class Choco(object):
         return True
 
     def reauth_kakao(self):
+        print >> sys.stdout, 'Trying to reconnect..'
         return self.kakao.login()
 
     @staticmethod
@@ -123,6 +124,7 @@ class Choco(object):
                 if not data:
                     print >> sys.stderr, 'WARNING: data is None. probably socket is disconnected?'
                     if self.reauth_kakao():
+                        print >> sys.stdout, 'Reconnected'
                         self.exit = False
                     else:
                         self.exit = True
