@@ -47,10 +47,13 @@ def create_default_config(fn):
 
 def main(argv=None):
     config_file = os.path.join('.', 'config.py')
+    tmp_dir = os.path.join('.', 'tmp')
     if not os.path.isfile(config_file):
         create_default_config(config_file)
         print >> sys.stdout, "Created config file. Edit config.py and run choco again"
         sys.exit(0)
+    if not os.path.isdir(tmp_dir):
+      os.mkdir(tmp_dir, 0777)
 
     try:
         import config
