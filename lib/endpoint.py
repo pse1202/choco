@@ -15,9 +15,13 @@ class Endpoint(object):
     def __init__(self):
         self.rules = []
         self.functions = {}
+        self.prefix = ''
 
     def __call__(self, *args):
         return self.dispatch(*args)
+
+    def set_prefix(self, prefix):
+        self.prefix = re.escape(prefix)
 
     @property
     def routes(self):
@@ -63,9 +67,18 @@ class Endpoint(object):
                                      'existing endpoint function: %s', endpoint)
             self.functions[endpoint] = func
             if not options.has_key('re'):
-                rule = re.compile('^' + re.escape(rule) + '$')
+                if not options.has_key('prefix'):
+                    rule = re.compile('^' + self.prefix + re.escape(rule) + '$')
+                else:
+                    rule = re.compile('^' + re.escape(rule) + '$')
             else:
-                rule = re.compile(rule)
+                if not options.has_key('prefix'):
+                    if rule.startswith('^'):
+                        rule = rule[1:]
+                        rule = '^' + self.prefix + rule
+                    else:
+                        rule = self.prefix + rule
+            rule = re.compile(rule)
             rule = (rule, endpoint)
             self.rules.append(rule)
 

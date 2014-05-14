@@ -45,6 +45,7 @@ class Choco(object):
             password=config.REDIS_PASSWORD)
         self.cache = redis.Redis(connection_pool=redis_pool)
         self.module = Endpoint()
+        self.module.set_prefix(config.COMMAND_PREFIX)
 
         auth_mail = self.cache.hget('choco_auth', 'mail')
         auth_pass = self.cache.hget('choco_auth', 'password')
@@ -121,7 +122,7 @@ class Choco(object):
                 data = self.kakao.translate_response()
                 if not data:
                     print >> sys.stderr, 'WARNING: data is None. probably socket is disconnected?'
-                    if self.reauth():
+                    if self.reauth_kakao():
                         self.exit = False
                     else:
                         self.exit = True

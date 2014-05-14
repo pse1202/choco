@@ -17,6 +17,7 @@ from choco import Choco
 def create_default_config(fn):
     f = open(fn, 'w')
     print >> f, trim("""\
+      #-*- coding: utf-8 -*-
       '''
       You have set "choco_auth" to redis db
       redis> hset choco_auth mail [kakaotalk email]
@@ -35,6 +36,7 @@ def create_default_config(fn):
       DEBUG = True
       SAVE_ROOM = False
 
+      COMMAND_PREFIX = '!' # ex: ',', '.' ..
       EXCLUDED_MODULES = ()
       """)
     f.close()

@@ -13,7 +13,7 @@ def sum_value(message, session, a, b):
     resp = '{0} + {1} = {2}'.format(a, b, int(a) + int(b))
     return Result(type=ResultType.TEXT, content=resp)
 
-@module.route(u'사진')
+@module.route(u'사진', prefix=False)
 def hello_photo(message, session):
     if message.attachment:
         return Result(type=ResultType.TEXT, content=u'사진 받았다!')
