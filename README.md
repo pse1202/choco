@@ -27,6 +27,8 @@ redis> hset choco_auth device_uuid [b64 uuid text]
 * On **linux/unix**: `./choco`
 * On **windows**: Before you run the bot, rename `choco` to `run.py` and just double-click `run.py` to start the bot, as long as you have Python installed correctly. **[Use Choco on Windows Guide (Korean)](http://ssut-dev.tumblr.com/post/85705056741/windows-choco-kakaotalk-bot)**
 
+Please check this: [Getting device\_uuid() from KakaoTalk PC](https://github.com/ssut/ChocoHelper/releases)
+
 ## Adding commands
 Create new python file to `modules` directory and write your bot script like this code (full code):
 
