@@ -44,9 +44,22 @@ class Cache(object):
         r = str(room)
         if not r or r == '': return None
         key = 'choco:room:' + r
+        if choco.cache.exists(key): return None
         p = choco.cache.pipeline()
         p.sadd('choco:rooms', r)
-        p.hset(key, 'admin', str(data['userId']))
+
+        admin_id = ''
+        if 'userId' in data:
+            admin_id = str(data['userId'])
+        elif 'chatLogs' in data:
+            log = data['chatLogs'][0]
+            if 'authorId' in log:
+                admin_id = str(log['authorId'])
+
+        if admin_id:
+            p.hset(key, 'admin', str(admin_id))
+        else:
+            return None # admin not found
         p.execute()
 
         return Session.get_or_create(room, str(data['userId']))

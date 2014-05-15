@@ -151,7 +151,7 @@ class Choco(object):
                 elif data['command'] == 'MSG':
                     self.queue.put(data)
                     self.cache.incr('choco:count:recv')
-                elif data['command'] == 'DECUNREAD':
+                elif data['command'] == 'DECUNREAD' or data['command'] == 'WELCOME':
                     body = data['body']
                     if 'chatId' in body:
                         chatId = str(body['chatId'])
@@ -192,7 +192,6 @@ class Choco(object):
         print >> sys.stdout, 'SENT     : %s' % sent_count
         print >> sys.stdout, 'ROOMS    : %s' % room_count
         print >> sys.stdout, 'SESSIONS : %s' % session_count
-        pass
 
     def process(self):
         while not self.exit:
@@ -223,11 +222,12 @@ class Choco(object):
             elif cmd == 'NEW':
                 data = item['body']
                 room = data['chatId']
-                Cache.enter(room, data)
+                created = Cache.enter(room, data)
 
-                content = u"[초코봇]\r\n방에 초대하신 분만 /나가/를 사용하실 수 있습니다."
-                message = Result(type=ResultType.TEXT, content=content)
-                self.dispatch(room, message, True)
+                if created:
+                    content = u"[초코봇]\r\n방에 초대하신 분만 /나가/를 사용하실 수 있습니다."
+                    message = Result(type=ResultType.TEXT, content=content)
+                    self.dispatch(room, message, True)
 
     @run_async
     def dispatch(self, room, message, child=False):
