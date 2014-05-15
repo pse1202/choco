@@ -51,6 +51,8 @@ class Choco(object):
         auth_pass = self.cache.hget('choco_auth', 'password')
         auth_client = self.cache.hget('choco_auth', 'client')
         auth_uuid = base64.b64encode(self.cache.hget('choco_auth', 'uuid'))
+        if self.cache.hexists('choco_auth', 'uuid_base64'):
+            auth_uuid = self.cache.hget('choco_auth'. 'uuid_base64')
 
         if not auth_mail:
             print >> sys.stderr, "Authenticate failed: email address not found\n" + \
