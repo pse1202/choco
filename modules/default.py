@@ -16,7 +16,7 @@ def leave(message, session):
         s = u"%s명 중 %s명이 나가를 외치셨습니다.\r\n방 인원이 3명 이상일 경우 최소 3명이 나가를 외치셔야 합니다!\r\n(그 이하일 경우 모두가 나가를 외치셔야 합니다)" % (sessions, leave_count)
         return Result(type=ResultType.TEXT, content=s)
 
-@module.route(ur'([가-힣\s]+)\s{0,}?해봐', re=True)
+@module.route(ur'([가-힣\d\s]+)\s{0,}?해봐', re=True)
 def order(message, session, o):
     content = o
     return Result(type=ResultType.TEXT, content=content)
