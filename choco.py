@@ -106,9 +106,29 @@ class Choco(object):
 
         return True
 
-    def reauth_kakao(self):
+    def reload_kakao(self):
         print >> sys.stdout, 'Trying to reconnect..'
-        return self.kakao.login()
+        self.ping_process.stop()
+        for p in self.pool:
+            p.stop()
+        while not self.queue.empty():
+            self.queue.get()
+        self.kakao.s.close()
+        user_session = self.kakao.session_key
+        uuid = self.kakao.device_uuid
+        user_id = self.kakao.user_id
+        del self.kakao
+        self.kakao = kakaotalk(user_session, uuid, user_id, debug=self.config.DEBUG)
+        login = self.kakao.login()
+        if login:
+            print >> sys.stdout, 'Reconnected'
+            self.exit = False
+            self.ping_process.start()
+            for p in self.pool:
+                p.start()
+            self.watch()
+        else:
+            print >> sys.stderr, 'ERROR: failed to re-authorize to KakaoTalk'
 
     @staticmethod
     def run(config):
@@ -124,12 +144,8 @@ class Choco(object):
                 data = self.kakao.translate_response()
                 if not data:
                     print >> sys.stderr, 'WARNING: data is None. probably socket is disconnected?'
-                    if self.reauth_kakao():
-                        print >> sys.stdout, 'Reconnected'
-                        self.exit = False
-                    else:
-                        self.exit = True
-                        print >> sys.stderr, 'ERROR: failed to re-authorize to KakaoTalk'
+                    self.reload_kakao()
+                    break
                 elif data['command'] == 'MSG':
                     self.queue.put(data)
                     self.cache.incr('choco:count:recv')
