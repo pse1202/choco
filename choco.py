@@ -18,9 +18,9 @@ from multiprocessing import Process, Queue
 from collections import namedtuple
 from datetime import datetime
 
-from lib.endpoint import Endpoint
-from lib.image import get_image_size
-from lib.run_async import run_async
+from core.endpoint import Endpoint
+from core.run_async import run_async
+from core.ext.image import get_image_size
 from modules import Cache, Session, Result, ResultType
 
 home = os.getcwd()
@@ -52,7 +52,7 @@ class Choco(object):
         auth_client = self.cache.hget('choco_auth', 'client')
         auth_uuid = base64.b64encode(self.cache.hget('choco_auth', 'uuid'))
         if self.cache.hexists('choco_auth', 'uuid_base64'):
-            auth_uuid = self.cache.hget('choco_auth'. 'uuid_base64')
+            auth_uuid = self.cache.hget('choco_auth', 'uuid_base64')
 
         if not auth_mail:
             print >> sys.stderr, "Authenticate failed: email address not found\n" + \
