@@ -4,8 +4,7 @@ from modules import module, Result, ResultType
 
 @module.route(u'안녕')
 def hello(message, session):
-    resp = '안녕 {0}!'.format(message.user_nick)
-    resp += "\r\n(session name attr: {0})".format(session.nick)
+    resp = '안녕 {0}!'.format(session.nick)
     return Result(type=ResultType.TEXT, content=resp)
 
 @module.route(u'(\d+)\+(\d+)', re=True)
