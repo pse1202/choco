@@ -27,7 +27,7 @@ redis> hset choco_auth device_uuid [b64 uuid text]
 * On **linux/unix**: `./choco`
 * On **windows**: Before you run the bot, rename `choco` to `run.py` and just double-click `run.py` to start the bot, as long as you have Python installed correctly. **[Use Choco on Windows Guide (Korean)](http://ssut-dev.tumblr.com/post/85705056741/windows-choco-kakaotalk-bot)**
 
-Please check this: [Getting device\_uuid() from KakaoTalk PC](https://github.com/ssut/ChocoHelper/releases)
+Please check this: [Getting device\_uuid(uuid) from KakaoTalk PC](https://github.com/ssut/ChocoHelper/releases)
 
 ## Adding commands
 Create new python file to `modules` directory and write your bot script like this code (full code):
@@ -84,7 +84,7 @@ def leave(message, session):
 ### API
 #### Unicode to String
 ```python
-from lib.unicode import u
+from core.ext.unicode import u
 a = u'가나다'
 if isinstance(a, unicode):
 	b = u(a)
@@ -93,9 +93,18 @@ if isinstance(a, unicode):
 
 #### Get image size
 ```python
-from lib.image import get_image_size
+from core.ext.image import get_image_size
 file = '/Users/ssut/dev/choco/sample/image.png'
 get_image_size(file) # ( width, height )
+```
+
+#### Get temporary filename (for send attachment)
+```python
+import urllib
+from core.ext.temp import generate_temp_name
+link = 'http://example.com'
+filename = generate_temp_name() # (absolute path) temp filename
+urllib.urlretrieve(link, filename)
 ```
 
 ## Getting help with Choco
