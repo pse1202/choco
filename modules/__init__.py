@@ -40,6 +40,44 @@ class Cache(object):
         return choco.cache.hget(key, name)
 
     @staticmethod
+    def get_incr(room, name):
+        key = 'choco:room:' + str(room) + ':' + name
+        c = choco.cache.get(key)
+        if not c:
+            return 0
+        else:
+            return int(c)
+
+    @staticmethod
+    def session_count(room):
+        room_key = 'choco:room:' + str(room) + ':sessions'
+        return choco.cache.scard(room_key)
+
+    @staticmethod
+    def incr(room, name):
+        key = 'choco:room:' + str(room) + ':' + name
+        choco.cache.incr(key)
+
+    @staticmethod
+    def sadd(room, name, item):
+        key = 'choco:room:' + str(room) + ':' + name
+        choco.cache.sadd(key, item)
+
+    @staticmethod
+    def s_count(room, name):
+        key = 'choco:room:' + str(room) + ':' + name
+        c = choco.cache.scard(key)
+        if not c:
+            return 0
+        else:
+            return c
+
+    @staticmethod
+    def s_exists(room, name, item):
+        key = 'choco:room:' + str(room) + ':' + name
+        return choco.cache.sismember(key, item)
+
+    @staticmethod
     def enter(room, data):
         r = str(room)
         if not r or r == '': return None
@@ -68,6 +106,7 @@ class Cache(object):
     def leave(room):
         r = str(room)
         key = 'choco:room:' + r
+        keys = 'choco:room:' + r + ':*'
         session = 'choco:room:' + r + ':sessions'
         p = choco.cache.pipeline()
         # remove session from room session set(list)
@@ -77,6 +116,9 @@ class Cache(object):
         p.srem('choco:rooms', r)
         # delete room hash
         p.delete(key)
+        # delete keys
+        for k in choco.cache.keys(keys):
+            p.delete(k)
         # delete session set
         p.delete(session)
         p.execute()
