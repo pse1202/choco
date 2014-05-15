@@ -10,11 +10,13 @@ Do you like chocopy? :)
 import time
 import os
 import sys
+import traceback
 import base64
 import json
 import redis
 import socket
-from multiprocessing import Process, Queue
+from threading import Thread
+from multiprocessing import Process, Queue, Manager
 from collections import namedtuple
 from datetime import datetime
 
@@ -34,7 +36,8 @@ class Choco(object):
         self.config = config
         self.queue = Queue(10000)
         self.count = 0
-        self.pool = [Process(target=self.process) for i in range(config.WORKER_COUNT)]
+        self.pool = [Thread(target=self.start) for i in range(config.THREAD_COUNT)]
+        self.manager = Manager()
         self.ping_process = Process(target=self.auto_ping)
         self.exit = False
         self.kakao = None
@@ -162,9 +165,11 @@ class Choco(object):
             except socket.timeout, e:
                 print >> sys.stderr, 'ERROR: socket timeout'
             except KeyboardInterrupt, e:
+                self.send_exit()
                 self.exit = True
             except Exception, e:
                 print >> sys.stderr, e
+                self.send_exit()
                 self.exit = True
 
     def auto_ping(self):
@@ -176,7 +181,11 @@ class Choco(object):
             except Exception, e:
                 pass
             self.print_log(ping_success)
-            time.sleep(60)
+            time.sleep(30)
+
+    def send_exit(self):
+        for t in self.pool:
+            self.queue.put({ 'exit': True })
 
     def print_log(self, ping_success):
         now = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
@@ -193,9 +202,10 @@ class Choco(object):
         print >> sys.stdout, 'ROOMS    : %s' % room_count
         print >> sys.stdout, 'SESSIONS : %s' % session_count
 
-    def process(self):
+    def start(self):
         while not self.exit:
             item = self.queue.get()
+            if 'exit' in item: break
             self.cache.incr('choco:count:exec')
             cmd = item['command']
 
@@ -203,7 +213,10 @@ class Choco(object):
                 data = item['body']
                 attachment = None
                 if 'attachment' in data['chatLog']:
-                    attachment = json.loads(data['chatLog']['attachment'])
+                    try:
+                        attachment = json.loads(data['chatLog']['attachment'])
+                    except:
+                        pass
                 try: t = datetime.fromtimestamp(data['chatLog']['sendAt'])
                 except Exception, e:
                     t = None
@@ -218,35 +231,44 @@ class Choco(object):
                     user_nick=nick, text=data['chatLog']['message'],
                     attachment=attachment, time=t)
 
-                self.dispatch(data['chatId'], message)
+                th = self.dispatch(data['chatId'], message)
             elif cmd == 'NEW':
                 data = item['body']
                 room = data['chatId']
-                created = Cache.enter(room, data)
+                created = None
+                try:
+                    created = Cache.enter(room, data)
+                except:
+                    pass
 
                 if created:
                     content = u"[초코봇]\r\n방에 초대하신 분만 /나가/를 사용하실 수 있습니다."
                     message = Result(type=ResultType.TEXT, content=content)
                     self.dispatch(room, message, True)
 
-    @run_async
     def dispatch(self, room, message, child=False):
         if not child:
             session = Session.get_or_create(room, message.user_id)
             result = self.module(message.text, message, session)
         else: result = message
         if result:
-            if result.type is ResultType.TEXT:
-                self.kakao.write(room, result.content, False)
-            elif result.type is ResultType.IMAGE:
-                content = result.content
-                size = get_image_size(content)
-                url = self.kakao.upload_image(content)
-                if url:
-                    self.kakao.write_image(room, url, size[0], size[1], False)
-                else:
-                    print >> sys.stderr, 'WARNING: Failed to upload photo'
-            elif result.type is ResultType.LEAVE:
-                Cache.leave(room)
-                self.kakao.leave(room, False)
-            self.cache.incr('choco:count:sent')
+            try:
+                if result.type is ResultType.TEXT:
+                    self.kakao.write(room, result.content, False)
+                elif result.type is ResultType.IMAGE:
+                    content = result.content
+                    size = get_image_size(content)
+                    url = self.kakao.upload_image(content)
+                    if url:
+                        self.kakao.write_image(room, url, size[0], size[1], False)
+                    else:
+                        print >> sys.stderr, 'WARNING: Failed to upload photo'
+                elif result.type is ResultType.LEAVE:
+                    Cache.leave(room)
+                    self.kakao.leave(room, False)
+                self.cache.incr('choco:count:sent')
+            except Exception, e:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                self.kakao.write(room, u'명령어 처리 도중 서버오류가 발생했습니다.', False)
+                error = str(e) + ' ' + ''.join(traceback.format_tb(exc_traceback))
+                self.cache.sadd('choco:errors', error)

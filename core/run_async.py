@@ -4,6 +4,7 @@ run_async.py
 run method by async thread
 """
 
+import collections
 from threading import Thread
 from functools import wraps
 

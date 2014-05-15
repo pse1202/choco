@@ -28,8 +28,8 @@ def create_default_config(fn):
       If you have base64 encoded device_uuid, enter this command:
       redis> hset choco_auth device_uuid [b64 uuid text]
       '''
-      # for better performance: process count
-      WORKER_COUNT = 2
+
+      THREAD_COUNT = 32
 
       REDIS_HOST = 'localhost'
       REDIS_PORT = 6379
