@@ -2,7 +2,7 @@
 import time
 from modules import module, dispatch, Cache, Result, ResultType
 
-@module.route(u'나가')
+@module.route(u'나가', prefix=False)
 def leave(message, session):
     if session.is_admin:
         text_result = Result(type=ResultType.TEXT, content=u'3초 후에 나간다!')
