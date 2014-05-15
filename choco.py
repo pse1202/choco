@@ -15,8 +15,9 @@ import base64
 import json
 import redis
 import socket
+from ctypes import c_int
 from threading import Thread
-from multiprocessing import Process, Queue, Manager
+from multiprocessing import Process, Value, Lock, Queue
 from collections import namedtuple
 from datetime import datetime
 
@@ -37,7 +38,8 @@ class Choco(object):
         self.queue = Queue(10000)
         self.count = 0
         self.pool = [Thread(target=self.start) for i in range(config.THREAD_COUNT)]
-        self.manager = Manager()
+        self.working_count = Value(c_int)
+        self.working_count_lock = Lock()
         self.ping_process = Process(target=self.auto_ping)
         self.exit = False
         self.kakao = None
@@ -173,6 +175,7 @@ class Choco(object):
                 self.exit = True
 
     def auto_ping(self):
+        time.sleep(10)
         while not self.exit:
             ping_success = False
             try:
@@ -201,11 +204,14 @@ class Choco(object):
         print >> sys.stdout, 'SENT     : %s' % sent_count
         print >> sys.stdout, 'ROOMS    : %s' % room_count
         print >> sys.stdout, 'SESSIONS : %s' % session_count
+        print >> sys.stdout, 'BUSY     : %s/%s' % (self.working_count.value, self.config.THREAD_COUNT)
 
     def start(self):
         while not self.exit:
             item = self.queue.get()
             if 'exit' in item: break
+            with self.working_count_lock:
+                self.working_count.value += 1
             self.cache.incr('choco:count:exec')
             cmd = item['command']
 
@@ -242,9 +248,12 @@ class Choco(object):
                     pass
 
                 if created:
-                    content = u"[초코봇]\r\n방에 초대하신 분만 /나가/를 사용하실 수 있습니다."
+                    content = u"[초코봇]\r\n안녕하세요. 나가기를 원하면 '나가'를 입력해주세요."
                     message = Result(type=ResultType.TEXT, content=content)
                     self.dispatch(room, message, True)
+
+            with self.working_count_lock:
+                self.working_count.value -= 1
 
     def dispatch(self, room, message, child=False):
         if not child:
