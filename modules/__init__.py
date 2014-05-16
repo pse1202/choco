@@ -2,6 +2,7 @@ import os
 import sys
 import imp
 import pickle
+import traceback
 import md5
 from collections import namedtuple
 
@@ -30,6 +31,7 @@ def module_loader(home, config):
             fn = os.path.join(os.path.dirname(os.path.realpath(__file__)), fn)
             try: imp.load_source(name, fn)
             except Exception, e:
+                traceback.print_exc()
                 print >> sys.stderr, "Error loading %s: %s" % (name, e)
                 sys.exit(1)
 
