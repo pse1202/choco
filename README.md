@@ -107,6 +107,23 @@ filename = generate_temp_name() # (absolute path) temp filename
 urllib.urlretrieve(link, filename)
 ```
 
+#### Generate random string
+```python
+from core.ext.generator import random_str
+print random_str(10) # first argument is length
+print random_str(10, 'ab') # second argument is choices
+```
+
+#### Translate strings (with replace pairs dictionary)
+```python
+from core.ext.text import strtr
+STRTR_DICT = {
+	'a': 'b',
+    'c': 'd',
+}
+print strtr('ac', STRTR_DICT) # bd
+```
+
 ## Getting help with Choco
 ### Install dependencies
 To install dependencies, run:
