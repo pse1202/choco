@@ -1,5 +1,6 @@
 #-*- coding: utf-8 -*-
 import time
+import random
 from modules import module, dispatch, Cache, Result, ResultType
 
 @module.route(u'나가', prefix=False)
@@ -19,4 +20,7 @@ def leave(message, session):
 @module.route(ur'([가-힣\d\s]+)\s{0,}?해봐', re=True)
 def order(message, session, o):
     content = o
+    if content.strip() == u'나가':
+        out_messages = [u'싫어', u'니가 나가', u'싫으']
+        content = random.choice(out_messages)
     return Result(type=ResultType.TEXT, content=content)
