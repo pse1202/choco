@@ -49,12 +49,12 @@ def search_photo(message, sessionm, pic_name, pic_command):
                 resp_content = tmp
             else:
                 resp_type = ResultType.TEXT
-                resp_content = u'사진을 가져오지 못했습니다. 대신 링크라도 드릴게요: {0}'.format(link)
+                resp_content = u'{0} 사진을 가져오지 못했습니다. 대신 링크라도 드릴게요: {1}'.format(pic_name, link)
         else:
             resp_type = ResultType.TEXT
-            resp_content = u'사진 가져오는데 너무 오래걸려서 중지시켰어요. 명령을 다시 내려주세요.'
+            resp_content = u'{0} 사진 가져오는데 너무 오래걸려서 중지시켰어요. 명령을 다시 내려주세요.'.format(pic_name)
     except Exception, e:
         resp_type = ResultType.TEXT
-        resp_content = u"사진을 가져오지 못했습니다\r\n가져오는데 너무 오래걸려 취소됐을 수도 있습니다. 다시 시도해보세요."
+        resp_content = u"{0}사진을 가져오지 못했습니다\r\n가져오는데 너무 오래걸려 취소됐을 수도 있습니다. 다시 시도해보세요.".format(pic_name)
 
     return Result(type=resp_type, content=resp_content)
