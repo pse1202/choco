@@ -15,7 +15,8 @@ def sum_value(message, session, a, b):
 @module.route(u'사진', prefix=False)
 def hello_photo(message, session):
     if message.attachment:
-        return Result(type=ResultType.TEXT, content=u'사진 받았다!')
+        return None
+        # return Result(type=ResultType.TEXT, content=u'사진 받았다!')
     else:
         image = os.path.join('sample', 'image.png')
         return Result(type=ResultType.IMAGE, content=image)
