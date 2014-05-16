@@ -12,5 +12,8 @@ def generate_temp_name():
 
     return name
 
+def get_temp_dir():
+    return os.path.join(home, 'tmp')
+
 def clear_temp_dir():
     pass

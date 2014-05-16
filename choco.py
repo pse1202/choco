@@ -268,10 +268,12 @@ class Choco(object):
                     content = result.content
                     size = get_image_size(content)
                     url = self.kakao.upload_image(content)
-                    if url:
+                    if url is not None:
                         self.kakao.write_image(room, url, size[0], size[1], False)
                     else:
                         print >> sys.stderr, 'WARNING: Failed to upload photo'
+                    if 'tmp' in content and os.path.isfile(content):
+                        os.remove(content)
                 elif result.type is ResultType.LEAVE:
                     Cache.leave(room)
                     self.kakao.leave(room, False)
