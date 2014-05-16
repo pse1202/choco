@@ -18,7 +18,7 @@ redis> hset choco_auth uuid [any text]
 ```
 If you have base64 encoded device uuid string, enter this command:
 ```
-redis> hset choco_auth device_uuid [b64 uuid text]
+redis> hset choco_auth uuid_base64 [b64 uuid text]
 ```
 5. Run choco and authorize KakaoTalk account
 6. Your account session data will be save to Redis DB (HASH: choco_session, If you want to re-authorize kakao account, remove this hash key use `HDEL` command
