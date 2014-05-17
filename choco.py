@@ -40,7 +40,10 @@ class Choco(object):
         self.pool = [Thread(target=self.start) for i in range(config.THREAD_COUNT)]
         self.working_count = Value(c_int)
         self.working_count_lock = Lock()
-        self.ping_process = Process(target=self.auto_ping)
+        if os.name is 'nt':
+            self.ping_process = Thread(target=self.auto_ping)
+        else:
+            self.ping_process = Process(target=self.auto_ping)
         self.exit = False
         self.kakao = None
 
@@ -55,19 +58,12 @@ class Choco(object):
         auth_mail = self.cache.hget('choco_auth', 'mail')
         auth_pass = self.cache.hget('choco_auth', 'password')
         auth_client = self.cache.hget('choco_auth', 'client')
-        auth_uuid = base64.b64encode(self.cache.hget('choco_auth', 'uuid'))
         if self.cache.hexists('choco_auth', 'uuid_base64'):
             auth_uuid = self.cache.hget('choco_auth', 'uuid_base64')
+        else:
+            auth_uuid = base64.b64encode(self.cache.hget('choco_auth', 'uuid'))
 
-        if not auth_mail:
-            print >> sys.stderr, "Authenticate failed: email address not found\n" + \
-                "Please check config.py and set 'choco_auth' to redis server"
-            sys.exit(1)
-        elif not auth_pass:
-            print >> sys.stderr, "Authenticate failed: password not found\n" + \
-                "Please check config.py and set 'choco_auth' to redis server"
-            sys.exit(1)
-        elif not auth_client:
+        if not auth_client:
             print >> sys.stderr, "Authenticate failed: client name not found\n" + \
                 "Please check config.py and set 'choco_auth' to redis server"
             sys.exit(1)
@@ -90,6 +86,15 @@ class Choco(object):
         user_id = self.cache.hget('choco_session', 'id')
 
         if not user_session or not user_id:
+            if not mail:
+                print >> sys.stderr, "Authenticate failed: email address not found\n" + \
+                    "Please check config.py and set 'choco_auth' to redis server"
+                sys.exit(1)
+            elif not password:
+                print >> sys.stderr, "Authenticate failed: password not found\n" + \
+                    "Please check config.py and set 'choco_auth' to redis server"
+                sys.exit(1)
+
             self.kakao = kakaotalk(debug=self.config.DEBUG)
             auth_result = self.kakao.auth(mail, password, client, uuid)
             if not auth_result:
@@ -150,7 +155,8 @@ class Choco(object):
             try:
                 data = self.kakao.translate_response()
                 if not data:
-                    print >> sys.stderr, 'WARNING: data is None. probably socket is disconnected?'
+                    print >> sys.stderr, \
+                        'WARNING: data is None. probably socket is disconnected?'
                     self.reload_kakao()
                     break
                 elif data['command'] == 'MSG':
