@@ -39,7 +39,46 @@ class ChocoListCache(ChocoCache):
 
 
 class ChocoDictCache(ChocoCache):
-    pass
+    def __init__(self, room=None, name=''):
+        assert len(name) > 0
+        super(ChocoListCache, self).__init__(room)
+        self.key = self.generate_key('dict', name)
+        self.created = False if self.adapter.exists(self.key) else True
+
+    def __len__(self):
+        return self.adapter.hlen(self.key)
+
+    def exists(self, key):
+        return self.adapter.hexists(self.key, key)
+
+    def get(self, key):
+        return self.adapter.hget(self.key, key)
+
+    def set(self, key, value):
+        return self.adapter.hset(self.key, key, value)
+
+    def delete(self, key):
+        return self.adapter.hdel(self.key, key)
+
+    def all(self):
+        return self.adapter.hgetall(self.key)
 
 class ChocoTextCache(ChocoCache):
-    pass
+    def __init__(self, room=None, name=''):
+        assert len(name) > 0
+        super(ChocoListCache, self).__init__(room)
+        self.key = self.generate_key('text', name)
+        self.created = False if self.adapter.exists(self.key) else True
+
+    def exists(self, key):
+        return self.adapter.exists(self.key)
+
+    def set(self, value):
+        return self.adapter.set(self.key, value)
+
+    def delete(self, key):
+        return self.adapter.delete(self.key)
+
+    def __repr__(self):
+        return self.adapter.get(self.key)
+
