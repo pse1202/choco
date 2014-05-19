@@ -33,6 +33,8 @@ class ChocoCLI(object):
                     if c in self.commands:
                         del cmd[0]
                         self.commands[c](*cmd)
+                    else:
+                        print 'choco-shell: command not found: {0}'.format(c)
             except Exception, e:
                 traceback.print_exc()
 
