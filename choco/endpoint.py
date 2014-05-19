@@ -97,6 +97,8 @@ class Endpoint(object):
 
         for args, endpoint in matches:
             session.update(message)
-            request = KakaoRequest(room=room, session=session)
+            attachment = message.attachment
+            request = KakaoRequest(room=room, session=session, message=message,
+                                    attachment=attachment)
             return self.functions[endpoint](request, *args)
         return None
