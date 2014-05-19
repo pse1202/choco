@@ -256,10 +256,14 @@ class Choco(object):
                     pass
 
                 if created:
-                    # print 'created'
                     content = u"[초코봇]\r\n안녕하세요. 나가기를 원하면 '나가'를 입력해주세요."
                     message = KakaoResponse(content)
                     self.dispatch(room, message, True)
+            elif cmd == 'ADMINMSG':
+                room = item['room']
+                content = item['message']
+                message = KakaoResponse(content)
+                self.dispatch(room, message, True)
 
             with self.working_count_lock:
                 self.working_count.value -= 1
