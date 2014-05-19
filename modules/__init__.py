@@ -10,11 +10,6 @@ Result = namedtuple('Result', ['type', 'content'])
 choco = None
 module = None
 
-class ResultType:
-    TEXT = 0
-    IMAGE = 1
-    LEAVE = 2
-
 def init_module(cc, ep):
     global choco, module
     choco = cc

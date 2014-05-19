@@ -6,6 +6,9 @@ https://gist.github.com/ssut/6ecf93fac9457dd623b0
 """
 import inspect
 import re
+from .kakao.request import KakaoRequest
+from .kakao.room import KakaoRoom
+from .kakao.session import KakaoSession
 
 def endpoint_from_func(func):
     assert func is not None, 'expected func if endpoint is not provided.'
@@ -82,7 +85,7 @@ class Endpoint(object):
             rule = (rule, endpoint)
             self.rules.append(rule)
 
-    def dispatch(self, rule, message, session):
+    def dispatch(self, rule, message, room, session):
         matches = (
             (regex.match(rule), ep) for regex, ep in self.rules
         )
@@ -93,6 +96,7 @@ class Endpoint(object):
         )
 
         for args, endpoint in matches:
-            session.validate(message)
-            return self.functions[endpoint](message, session, *args)
+            session.update(message)
+            request = KakaoRequest(room=room, session=session)
+            return self.functions[endpoint](request, *args)
         return None

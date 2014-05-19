@@ -6,14 +6,16 @@ import time
 import traceback
 import random
 from bs4 import BeautifulSoup
-from core.ext.text import strtr
-from core.ext.unicode import u
-from core.ext.temp import generate_temp_name
-from modules import module, dispatch, Result, ResultType
+from choco.utils.text import strtr
+from choco.utils.unicode import u
+from choco.utils.temp import generate_temp_name
+from modules import module
+from choco.contrib.constants import ContentType
+from choco.kakao.response import KakaoResponse
 
 SEARCH_PIC_URL = "https://www.google.com/search?q={0}&tbm=isch&tbs=isz:m"
 @module.route(ur'^([가-힣a-zA-Z0-9\s]+)\s{0,}?사진\s{0,}?(구해|가져|찾아|검색|내놔)', re=True, prefix=False)
-def search_photo(message, session, pic_name, pic_command):
+def search_photo(request, pic_name, pic_command):
     resp_type = None
     resp_content = None
     try:
@@ -43,19 +45,19 @@ def search_photo(message, session, pic_name, pic_command):
                     with open(tmp, 'wb') as f:
                         for chunk in r.iter_content():
                             f.write(chunk)
-                    resp_type = ResultType.IMAGE
+                    resp_type = ContentType.Image
                     resp_content = tmp
                 else:
-                    resp_type = ResultType.TEXT
+                    resp_type = ContentType.Text
                     resp_content = u'{0} 사진을 가져오지 못했습니다. 대신 링크라도 드릴게요: {1}'.format(pic_name, link)
         else:
-            resp_type = ResultType.TEXT
+            resp_type = ContentType.Text
             resp_content = u'{0} 사진 가져오는데 너무 오래걸려서 중지시켰어요. 명령을 다시 내려주세요.'.format(pic_name)
     except Exception, e:
-        resp_type = ResultType.TEXT
+        resp_type = ContentType.Text
         resp_content = u"{0}사진을 가져오지 못했습니다\r\n가져오는데 너무 오래걸려 취소됐을 수도 있습니다.".format(pic_name)
 
-    return Result(type=resp_type, content=resp_content)
+    return KakaoResponse(resp_content, content_type=resp_type)
 
 SEARCH_YOUTUBE_URL = "http://gdata.youtube.com/feeds/api/videos?q={0}&max-results=3&alt=jsonc&v=2"
 YOUTUBE_REPLACE_PATTERN = {
@@ -63,7 +65,7 @@ YOUTUBE_REPLACE_PATTERN = {
     u'개전': u'皆伝',
 }
 @module.route(ur'^([가-힣a-zA-Z0-9\s]+)\s{0,}?(동영상|영상|유튜브)', re=True, prefix=False)
-def search_youtube(message, session, name, search_command):
+def search_youtube(request, name, search_command):
     resp_type = None
     resp_content = None
     name = name.strip()
@@ -76,10 +78,10 @@ def search_youtube(message, session, name, search_command):
             data = json.loads(request.text)['data']
 
             if data['totalItems'] is 0:
-                resp_type = ResultType.TEXT
+                resp_type = ContentType.Text
                 resp_content = u'검색결과가 없습니다.'
             else:
-                resp_type = ResultType.TEXT
+                resp_type = ContentType.Text
                 resp_content = u''
                 items = data['items']
 
@@ -90,12 +92,12 @@ def search_youtube(message, session, name, search_command):
                     resp_content += u"조회: {0}, 별점: {1}\r\n".format(str(item['viewCount']), rating)
                     resp_content += u"{0}\r\n".format(player)
         else:
-            resp_type = ResultType.TEXT
+            resp_type = ContentType.Text
             resp_content = u'{0} 영상을 찾지 못했습니다.'.format(name)
     except Exception, e:
         traceback.print_exc()
-        resp_type = ResultType.TEXT
+        resp_type = ContentType.Text
         resp_content = u"{0} 영상을 찾지 못했습니다.\r\n가져오는데 너무 오래 걸려 취소됐을 수도 있습니다.".format(name)
 
-    return Result(type=resp_type, content=resp_content)
+    return KakaoResponse(resp_content, content_type=resp_type)
 

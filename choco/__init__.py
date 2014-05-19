@@ -21,10 +21,13 @@ from multiprocessing import Process, Value, Lock, Queue
 from collections import namedtuple
 from datetime import datetime
 
-from core.endpoint import Endpoint
-from core.run_async import run_async
-from core.ext.image import get_image_size
-from modules import Cache, Session, Result, ResultType
+from .endpoint import Endpoint
+from .utils.image import get_image_size
+from .kakao.response import KakaoResponse
+from .kakao.room import KakaoRoom
+from .kakao.session import KakaoSession
+from .contrib.cache import ChocoCache
+from .contrib.constants import ContentType
 
 home = os.getcwd()
 sys.path.append(os.path.join(home, 'modules'))
@@ -51,7 +54,7 @@ class Choco(object):
             port=config.REDIS_PORT,
             db=config.REDIS_DB,
             password=config.REDIS_PASSWORD)
-        self.cache = redis.Redis(connection_pool=redis_pool)
+        self.cache = ChocoCache.adapter = redis.Redis(connection_pool=redis_pool)
         self.module = Endpoint()
         self.module.set_prefix(config.COMMAND_PREFIX)
 
@@ -160,13 +163,20 @@ class Choco(object):
                     self.reload_kakao()
                     break
                 elif data['command'] == 'MSG':
+                    body = data['body']
+                    if 'chatId' in body:
+                        chatId = str(body['chatId'])
+                        exists = self.cache.hexists('choco:rooms', chatId)
+                        if not exists:
+                            data['command'] = 'NEW'
+
                     self.queue.put(data)
                     self.cache.incr('choco:count:recv')
                 elif data['command'] == 'DECUNREAD' or data['command'] == 'WELCOME':
                     body = data['body']
                     if 'chatId' in body:
                         chatId = str(body['chatId'])
-                        exists = self.cache.sismember('choco:rooms', chatId)
+                        exists = self.cache.hexists('choco:rooms', chatId)
                         if not exists:
                             data['command'] = 'NEW'
                             self.queue.put(data)
@@ -201,7 +211,7 @@ class Choco(object):
         recv_count = self.cache.get('choco:count:recv')
         exec_count = self.cache.get('choco:count:exec')
         sent_count = self.cache.get('choco:count:sent')
-        room_count = self.cache.scard('choco:rooms')
+        room_count = self.cache.hlen('choco:rooms')
         session_count = self.cache.hlen('choco:sessions')
         ping = '*' if ping_success is True else '-'
         print >> sys.stdout, '[{0}] {1}'.format(ping, now)
@@ -239,23 +249,27 @@ class Choco(object):
                 except UnicodeDecodeError, e:
                     pass
 
-                message = Message(room=data['chatId'], user_id=user_id,
+                room = KakaoRoom.get_or_create(data['chatId'])
+
+                message = Message(room=room, user_id=user_id,
                     user_nick=nick, text=data['chatLog']['message'],
                     attachment=attachment, time=t)
 
-                th = self.dispatch(data['chatId'], message)
+                th = self.dispatch(room, message)
             elif cmd == 'NEW':
                 data = item['body']
                 room = data['chatId']
-                created = None
+                created = False
                 try:
-                    created = Cache.enter(room, data)
+                    room = KakaoRoom.get_or_create(room, data=data)
+                    created = room.created
                 except:
                     pass
 
                 if created:
+                    # print 'created'
                     content = u"[초코봇]\r\n안녕하세요. 나가기를 원하면 '나가'를 입력해주세요."
-                    message = Result(type=ResultType.TEXT, content=content)
+                    message = KakaoResponse(content)
                     self.dispatch(room, message, True)
 
             with self.working_count_lock:
@@ -263,29 +277,31 @@ class Choco(object):
 
     def dispatch(self, room, message, child=False):
         if not child:
-            session = Session.get_or_create(room, message.user_id)
-            result = self.module(message.text, message, session)
+            session = KakaoSession.get_or_create(room, message.user_id)
+            result = self.module(message.text, message, room, session)
         else: result = message
+
         if result:
+            room_id = int(room.id)
             try:
-                if result.type is ResultType.TEXT:
-                    self.kakao.write(room, result.content, False)
-                elif result.type is ResultType.IMAGE:
+                if result.content_type == ContentType.Text:
+                    self.kakao.write(room_id, result.content, False)
+                elif result.content_type == ContentType.Image:
                     content = result.content
                     size = get_image_size(content)
                     url = self.kakao.upload_image(content)
                     if url is not None:
-                        self.kakao.write_image(room, url, size[0], size[1], False)
+                        self.kakao.write_image(room_id, url, size[0], size[1], False)
                     else:
                         print >> sys.stderr, 'WARNING: Failed to upload photo'
                     if 'tmp' in content and os.path.isfile(content):
                         os.remove(content)
-                elif result.type is ResultType.LEAVE:
-                    Cache.leave(room)
-                    self.kakao.leave(room, False)
+                elif result.content_type == ContentType.Leave:
+                    room.leave()
+                    self.kakao.leave(room_id, False)
                 self.cache.incr('choco:count:sent')
             except Exception, e:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                self.kakao.write(room, u'명령어 처리 도중 서버오류가 발생했습니다.', False)
+                self.kakao.write(room_id, u'명령어 처리 도중 서버오류가 발생했습니다.', False)
                 error = str(e) + ' ' + ''.join(traceback.format_tb(exc_traceback))
                 self.cache.sadd('choco:errors', error)

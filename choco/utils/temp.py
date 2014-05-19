@@ -1,7 +1,7 @@
 #-*- coding: utf-8 -*-
 import os
 from choco import home
-from core.ext.generator import random_str
+from .generator import random_str
 
 def generate_temp_name():
     tmp_dir = os.path.join(home, 'tmp')

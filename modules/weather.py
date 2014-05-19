@@ -1,12 +1,14 @@
 #-*- coding: utf-8 -*-
 import urllib
 from xml.etree import ElementTree as ET
-from core.ext.unicode import u
-from modules import module, dispatch, Result, ResultType
+from choco.utils.unicode import u
+from modules import module
+from choco.contrib.constants import ContentType
+from choco.kakao.response import KakaoResponse
 
 WEATHER_URL = "http://weather.service.msn.com/data.aspx?weadergreetype=C&culture=ko-kr&weasearchstr={0}"
 @module.route(ur'^([가-힣]+)\s{0,}?날씨', re=True, prefix=False)
-def forecast(message, session, place):
+def forecast(request, place):
     text = u''
     try:
         str_place = u(place)
@@ -22,4 +24,4 @@ def forecast(message, session, place):
     except Exception, e:
         text = u"날씨 데이터를 가져오지 못했습니다."
 
-    return Result(type=ResultType.TEXT, content=text)
+    return KakaoResponse(text)
