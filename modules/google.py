@@ -88,8 +88,9 @@ def search_youtube(request, name, search_command):
                 for item in items:
                     player = item['player']['mobile'] if 'mobile' in item['player'] else item['player']['default']
                     rating = str(item['rating']) if 'rating' in item else '0'
+                    view_count = str(item['viewCount']) if 'viewCount' in item else '0'
                     resp_content += u"{0}\r\n".format(item['title'])
-                    resp_content += u"조회: {0}, 별점: {1}\r\n".format(str(item['viewCount']), rating)
+                    resp_content += u"조회: {0}, 별점: {1}\r\n".format(view_count, rating)
                     resp_content += u"{0}\r\n".format(player)
         else:
             resp_type = ContentType.Text
