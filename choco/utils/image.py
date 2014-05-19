@@ -12,5 +12,4 @@ def get_image_size(url):
         im = Image.open(url)
         return im.size
     except Exception, e:
-        print e
         return None
