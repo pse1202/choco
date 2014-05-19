@@ -15,6 +15,7 @@ import base64
 import json
 import redis
 import socket
+import curses
 from ctypes import c_int
 from threading import Thread
 from multiprocessing import Process, Value, Lock, Queue
@@ -28,6 +29,7 @@ from .kakao.room import KakaoRoom
 from .kakao.session import KakaoSession
 from .contrib.cache import ChocoCache
 from .contrib.constants import ContentType
+from .cli import ChocoCLI
 
 home = os.getcwd()
 sys.path.append(os.path.join(home, 'modules'))
@@ -44,8 +46,10 @@ class Choco(object):
         self.working_count = Value(c_int)
         self.working_count_lock = Lock()
         if os.name is 'nt':
+            self.watch_process = Thread(target=self.watch)
             self.ping_process = Thread(target=self.auto_ping)
         else:
+            self.watch_process = Process(target=self.watch)
             self.ping_process = Process(target=self.auto_ping)
         self.exit = False
         self.kakao = None
@@ -57,6 +61,9 @@ class Choco(object):
         self.cache = ChocoCache.adapter = redis.Redis(connection_pool=redis_pool)
         self.module = Endpoint()
         self.module.set_prefix(config.COMMAND_PREFIX)
+
+        self.cli = ChocoCLI(self)
+        self.log = {}
 
         auth_mail = self.cache.hget('choco_auth', 'mail')
         auth_pass = self.cache.hget('choco_auth', 'password')
@@ -151,7 +158,8 @@ class Choco(object):
         bot.ping_process.start()
         for p in bot.pool:
             p.start()
-        bot.watch()
+        bot.watch_process.start()
+        bot.cli.open()
 
     def watch(self):
         while not self.exit:
@@ -199,28 +207,30 @@ class Choco(object):
                 ping_success = True
             except Exception, e:
                 pass
-            self.print_log(ping_success)
+            self.set_log(ping_success)
             time.sleep(30)
 
     def send_exit(self):
         for t in self.pool:
             self.queue.put({ 'exit': True })
 
-    def print_log(self, ping_success):
+    def set_log(self, ping_success):
         now = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
         recv_count = self.cache.get('choco:count:recv')
         exec_count = self.cache.get('choco:count:exec')
         sent_count = self.cache.get('choco:count:sent')
         room_count = self.cache.hlen('choco:rooms')
         session_count = self.cache.hlen('choco:sessions')
-        ping = '*' if ping_success is True else '-'
-        print >> sys.stdout, '[{0}] {1}'.format(ping, now)
-        print >> sys.stdout, 'RECV     : %s' % recv_count
-        print >> sys.stdout, 'EXEC     : %s' % exec_count
-        print >> sys.stdout, 'SENT     : %s' % sent_count
-        print >> sys.stdout, 'ROOMS    : %s' % room_count
-        print >> sys.stdout, 'SESSIONS : %s' % session_count
-        print >> sys.stdout, 'BUSY     : %s/%s' % (self.working_count.value, self.config.THREAD_COUNT)
+        self.log = {
+            'last_logged': now,
+            'recv': recv_count,
+            'exec': exec_count,
+            'sent': sent_count,
+            'room': room_count,
+            'session': session_count,
+            'busy': self.working_count.value,
+            'total': self.config.THREAD_COUNT,
+        }
 
     def start(self):
         while not self.exit:
