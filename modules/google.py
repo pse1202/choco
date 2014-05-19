@@ -24,6 +24,8 @@ def search_photo(request, pic_name, pic_command):
         PIC_COUNT.value += 1
 
     if PIC_COUNT.value > 10:
+        with PIC_LOCK:
+            PIC_COUNT.value -= 1
         return KakaoResponse(u'현재 사진 동시요청 수가 너무 많습니다. 잠시 후 다시 시도해주세요.')
 
     resp_type = None
