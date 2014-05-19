@@ -16,9 +16,9 @@ import json
 import redis
 import socket
 import curses
-from ctypes import c_int
+from ctypes import c_int, c_bool
 from threading import Thread
-from multiprocessing import Process, Value, Lock, Queue
+from multiprocessing import Process, Value, Lock, Queue, Manager
 from collections import namedtuple
 from datetime import datetime
 
@@ -51,7 +51,7 @@ class Choco(object):
         else:
             self.watch_process = Process(target=self.watch)
             self.ping_process = Process(target=self.auto_ping)
-        self.exit = False
+        self.exit = Value(c_bool)
         self.kakao = None
 
         redis_pool = redis.ConnectionPool(host=config.REDIS_HOST,
@@ -63,7 +63,6 @@ class Choco(object):
         self.module.set_prefix(config.COMMAND_PREFIX)
 
         self.cli = ChocoCLI(self)
-        self.log = {}
 
         auth_mail = self.cache.hget('choco_auth', 'mail')
         auth_pass = self.cache.hget('choco_auth', 'password')
@@ -144,7 +143,7 @@ class Choco(object):
         login = self.kakao.login()
         if login:
             print >> sys.stdout, 'Reconnected'
-            self.exit = False
+            self.exit.value = False
             self.ping_process.start()
             for p in self.pool:
                 p.start()
@@ -162,7 +161,7 @@ class Choco(object):
         bot.cli.open()
 
     def watch(self):
-        while not self.exit:
+        while not self.exit.value:
             try:
                 data = self.kakao.translate_response()
                 if not data:
@@ -192,48 +191,28 @@ class Choco(object):
                 print >> sys.stderr, 'ERROR: socket timeout'
             except KeyboardInterrupt, e:
                 self.send_exit()
-                self.exit = True
+                self.exit.value = True
             except Exception, e:
                 print >> sys.stderr, e
                 self.send_exit()
-                self.exit = True
+                self.exit.value = True
 
     def auto_ping(self):
-        time.sleep(10)
-        while not self.exit:
+        while not self.exit.value:
             ping_success = False
             try:
                 self.kakao.ping(False)
                 ping_success = True
             except Exception, e:
                 pass
-            self.set_log(ping_success)
             time.sleep(30)
 
     def send_exit(self):
         for t in self.pool:
             self.queue.put({ 'exit': True })
 
-    def set_log(self, ping_success):
-        now = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
-        recv_count = self.cache.get('choco:count:recv')
-        exec_count = self.cache.get('choco:count:exec')
-        sent_count = self.cache.get('choco:count:sent')
-        room_count = self.cache.hlen('choco:rooms')
-        session_count = self.cache.hlen('choco:sessions')
-        self.log = {
-            'last_logged': now,
-            'recv': recv_count,
-            'exec': exec_count,
-            'sent': sent_count,
-            'room': room_count,
-            'session': session_count,
-            'busy': self.working_count.value,
-            'total': self.config.THREAD_COUNT,
-        }
-
     def start(self):
-        while not self.exit:
+        while not self.exit.value:
             item = self.queue.get()
             if 'exit' in item: break
             with self.working_count_lock:
