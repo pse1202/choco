@@ -22,9 +22,9 @@ PIC_LOCK = Lock()
 def search_photo(request, pic_name, pic_command):
     # room photo limit (concurrency 2)
     limits = request.room.list('photo_limits')
-    if len(limits) >= 3:
+    if len(limits) >= 2:
         return KakaoResponse(u'현재 가져오고 있는 사진이 있습니다. 잠시만 기다려주세요.' + \
-                                u'한 방에서 최대 동시 3장까지의 사진만 가져올 수 있습니다.')
+                                u'한 방에서 최대 동시 2장까지의 사진만 가져올 수 있습니다.')
     elif limits.exists(pic_name):
         return KakaoResponse(u'요청하신 {0} 사진을 이미 가져오고 있는 중입니다. 잠시만 기다려주세요.'.format(
                                 pic_name))
