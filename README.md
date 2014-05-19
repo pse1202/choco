@@ -34,57 +34,62 @@ Create new python file to `modules` directory and write your bot script like thi
 
 ```python
 #-*- coding: utf-8 -*-
-from modules import module, dispatch, Result, ResultType
+from modules import module
+from choco.kakao.constants import ContentType
+from choco.kakao.response import KakaoReponse
 
 @module.route('Hello')
-def hello(message, session):
-    resp = 'Hi, {0}!'.format(session.nick)
-    return Result(type=ResultType.TEXT, content=resp)
-
-@module.route('(\d+)\+(\d+)', re=True)
-def sum_value(message, session, a, b):
-    resp = '{0} + {1} = {2}'.format(a, b, int(a) + int(b))
-    return Result(type=ResultType.TEXT, content=resp)
+def hello(request):
+    resp = 'Hi, {0}!'.format(request.session.nick)
+    return KakaoResponse(resp)
 
 @module.route('Photo', prefix=False)
-def hello_photo(message, session):
+def hello_photo(request):
     if message.attachment:
-        return Result(type=ResultType.TEXT, content='I got a photo!')
+        return KakaoResponse('I got a photo!')
     else:
         image = os.path.join('sample', 'image.png')
-        return Result(type=ResultType.IMAGE, content=image)
+        return KakaoResponse(image, content_type=ContentType.Image)
 
 @module.route('Bye')
-def leave(message, session):
-    text_result = Result(type=ResultType.TEXT, content='Leave after 3 seconds!')
-    dispatch(message.room, text_result)
-    time.sleep(3)
-
-    return Result(type=ResultType.LEAVE, content=None)
+def leave(request):
+    return KakaoResponse(None, content_type=ContentType.Leave)
 ```
+
+### Request object
+| key | type |
+|--------|--------|
+| room | KakaoRoom |
+| session | KakaoSession |
+| message | Message |
+| attachment | dictionary (python object) |
 
 ### Message
 | key | type | value |
 |--------|--------|--------|
-|room|int|Chat room(channel)'s unique ID|
+|room|int|Room(channel)'s unique identifier|
 |user\_id|int|User that sent the message (not recommend that you use this)|
 |user\_nick|unicode|User's nickname that sent the message (not recommend that you use this)|
 |text|unicode|Message content|
-|attachment|dict|Message attachment (e.g. Image, Video..)|
+|attachment|dict|Message attachment (e.g. Image, Video.., same as **request.attachment**)|
 |time|datetime|Message sent time|
 
-### Session
+### KakaoRoom
 | key | type| value |
 |--------|--------|--------|
-|room|str|Chat room(channel)'s unique ID|
-|user|str|User that sent the message|
+|id|str|Room(channel)'s unique identifier|
+
+### KakaoSession
+| key | type| value |
+|--------|--------|--------|
+|id|str|User that sent the message|
 |nick|str|User's nickname that sent the message|
 |is\_admin|bool|is admin|
 
 ### API
 #### Unicode to String
 ```python
-from core.ext.unicode import u
+from choco.utils.unicode import u
 a = u'가나다'
 if isinstance(a, unicode):
 	b = u(a)
@@ -93,7 +98,7 @@ if isinstance(a, unicode):
 
 #### Get image size
 ```python
-from core.ext.image import get_image_size
+from choco.utils.image import get_image_size
 file = '/Users/ssut/dev/choco/sample/image.png'
 get_image_size(file) # ( width, height )
 ```
@@ -101,7 +106,7 @@ get_image_size(file) # ( width, height )
 #### Get temporary filename (for send attachment)
 ```python
 import urllib
-from core.ext.temp import generate_temp_name
+from choco.utils.temp import generate_temp_name
 link = 'http://example.com'
 filename = generate_temp_name() # (absolute path) temp filename
 urllib.urlretrieve(link, filename)
@@ -109,14 +114,14 @@ urllib.urlretrieve(link, filename)
 
 #### Generate random string
 ```python
-from core.ext.generator import random_str
+from choco.utils.generator import random_str
 print random_str(10) # first argument is length
 print random_str(10, 'ab') # second argument is choices
 ```
 
 #### Translate strings (with replace pairs dictionary)
 ```python
-from core.ext.text import strtr
+from choco.utils.text import strtr
 STRTR_DICT = {
 	'a': 'b',
     'c': 'd',
