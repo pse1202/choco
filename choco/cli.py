@@ -7,6 +7,7 @@ import os
 import shlex
 import inspect
 import imp
+import psutil
 import traceback
 try:
     import readline
@@ -29,7 +30,7 @@ class ChocoCLI(object):
             try:
                 cmd = shlex.split(command)
                 if len(cmd) > 0 and len(cmd[0]) > 0:
-                    c = cmd[0]
+                    c = cmd[0].replace('-', '_')
                     if c in self.commands:
                         del cmd[0]
                         self.commands[c](*cmd)
@@ -37,6 +38,9 @@ class ChocoCLI(object):
                         print 'choco-shell: command not found: {0}'.format(c)
             except Exception, e:
                 traceback.print_exc()
+
+    def app_status(self):
+        pass
 
     def status(self):
         now = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
