@@ -15,11 +15,23 @@ from modules import module
 from choco.contrib.constants import ContentType
 from choco.kakao.response import KakaoResponse
 
-SEARCH_PIC_URL = "https://www.google.com/search?q={0}&tbm=isch&tbs=isz:m"
+SEARCH_PIC_URL = "https://www.google.com/search?q={0}&tbm=isch&tbs=isz:m&safe=active"
 PIC_COUNT = Value(c_int)
 PIC_LOCK = Lock()
-@module.route(ur'^([가-힣a-zA-Z0-9\s]+)\s{0,}?사진\s{0,}?(구해|가져|찾아|검색|내놔)', re=True, prefix=False)
+@module.route(ur'^([가-힣a-zA-Z0-9\s]+)\s{0,}?(사진)\s{0,}?', re=True, prefix=False)
 def search_photo(request, pic_name, pic_command):
+    # room photo limit (concurrency 2)
+    limits = request.room.list('photo_limits')
+    if len(limits) >= 3:
+        return KakaoResponse(u'현재 가져오고 있는 사진이 있습니다. 잠시만 기다려주세요.' + \
+                                u'한 방에서 최대 동시 3장까지의 사진만 가져올 수 있습니다.')
+    elif limits.exists(pic_name):
+        return KakaoResponse(u'요청하신 {0} 사진을 이미 가져오고 있는 중입니다. 잠시만 기다려주세요.'.format(
+                                pic_name))
+    else:
+        limits.append(pic_name)
+
+
     with PIC_LOCK:
         PIC_COUNT.value += 1
 
@@ -71,6 +83,7 @@ def search_photo(request, pic_name, pic_command):
 
     with PIC_LOCK:
         PIC_COUNT.value -= 1
+    limits.delete(pic_name)
 
     return KakaoResponse(resp_content, content_type=resp_type)
 
