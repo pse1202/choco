@@ -67,6 +67,7 @@ class Choco(object):
         auth_mail = self.cache.hget('choco_auth', 'mail')
         auth_pass = self.cache.hget('choco_auth', 'password')
         auth_client = self.cache.hget('choco_auth', 'client')
+        auth_x_vc = self.cache.hget('choco_auth', 'x_vc')
         if self.cache.hexists('choco_auth', 'uuid_base64'):
             auth_uuid = self.cache.hget('choco_auth', 'uuid_base64')
         else:
@@ -82,7 +83,7 @@ class Choco(object):
             sys.exit(1)
 
         self.load_module()
-        if self.auth_kakao(auth_mail, auth_pass, auth_client, auth_uuid):
+        if self.auth_kakao(auth_mail, auth_pass, auth_client, auth_uuid, auth_x_vc):
             print >> sys.stdout, 'Successfully connected to KakaoTalk server'
 
     def load_module(self):
@@ -90,7 +91,7 @@ class Choco(object):
         init_module(self, self.module)
         module_loader(home, self.config)
 
-    def auth_kakao(self, mail, password, client, uuid):
+    def auth_kakao(self, mail, password, client, uuid, x_vc):
         user_session = self.cache.hget('choco_session', 'key')
         user_id = self.cache.hget('choco_session', 'id')
 
@@ -103,9 +104,13 @@ class Choco(object):
                 print >> sys.stderr, "Authenticate failed: password not found\n" + \
                     "Please check config.py and set 'choco_auth' to redis server"
                 sys.exit(1)
+            elif not x_vc:
+                print >> sys.stderr, "Authenticate failed: X-VC token not found\n" + \
+                    "Please check config.py and set 'choco_auth' to redis server"
+                sys.exit(1)
 
             self.kakao = kakaotalk(debug=self.config.DEBUG)
-            auth_result = self.kakao.auth(mail, password, client, uuid)
+            auth_result = self.kakao.auth(mail, password, client, uuid, x_vc)
             if not auth_result:
                 print >> sys.stderr, "KakaoTalk auth failed"
                 sys.exit(1)
