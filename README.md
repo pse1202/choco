@@ -15,6 +15,7 @@ redis> hset choco_auth mail [kakaotalk email]
 redis> hset choco_auth password [kakaotalk password]
 redis> hset choco_auth client [client name]
 redis> hset choco_auth uuid [any text]
+redis> hset choco_auth x_vc [x-vc token]
 ```
 If you have base64 encoded device uuid string, enter this command:
 ```
