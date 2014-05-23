@@ -7,7 +7,7 @@ The bot can handle multiple rooms at a time.
 
 ## Installation
 1. Clone this repository
-2. Move to choco directory and execute this command: `./choco` (If occurs permission error execute `chmod +x choco`)
+2. Move to choco directory and execute this command: `./start` (If occurs permission error execute `chmod +x start`)
 3. Edit config file(config.py)
 4. Open redis and run the following command:
 ```
@@ -25,8 +25,8 @@ redis> hset choco_auth uuid_base64 [b64 uuid text]
 6. Your account session data will be save to Redis DB (HASH: choco_session, If you want to re-authorize kakao account, remove this hash key use `HDEL` command
 
 ### Run
-* On **linux/unix**: `./choco`
-* On **windows**: Before you run the bot, rename `choco` to `run.py` and just double-click `run.py` to start the bot, as long as you have Python installed correctly. **[Use Choco on Windows Guide (Korean)](http://ssut-dev.tumblr.com/post/85705056741/windows-choco-kakaotalk-bot)**
+* On **linux/unix**: `./start`
+* On **windows**: Before you run the bot, rename `start` to `run.py` and just double-click `run.py` to start the bot, as long as you have Python installed correctly. **[Use Choco on Windows Guide (Korean)](http://ssut-dev.tumblr.com/post/85705056741/windows-choco-kakaotalk-bot)**
 
 Please check this: [Getting device\_uuid(uuid) from KakaoTalk PC](https://github.com/ssut/ChocoHelper/releases)
 
